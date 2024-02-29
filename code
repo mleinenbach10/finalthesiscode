@@ -1,0 +1,212 @@
+# Document your metadata & run lists
+  Metadata: feb27_meta.tsv
+  Runs list: feb27_runs.txt
+
+# Confirm that you have all the samples you need in metadata. 
+
+## add filtering steps here. 
+
+## create manifest file
+    
+    cd /Thesis_3/fastq
+
+    mkdir manifest
+
+    echo "# paired-end PHRED 33 fastq manifest file for forward and reverse reads" > manifest1.txt
+    
+    echo -e "sample-id\tforward-absolute-filepath\treverse-absolute-filepath" >> manifest1.txt
+    
+    ls *.fastq | cut -d "_" -f 1 | sort | uniq | parallel -j0 --keep-order 'echo -e "{/}\t"$PWD"/{/}_1.fastq\t"$PWD"/{/}_2.fastq"' | tr -d "'" > manifest2.txt
+    
+    cat manifest1.txt manifest2.txt > manifest/manifest.tsv
+    
+    rm *.txt
+    
+    cd ..
+
+## demux your paired end data (long)
+
+    qiime tools import \
+        --type 'SampleData[PairedEndSequencesWithQuality]' \
+        --input-path /Users/meganleinenbach/Documents/Thesis_3/fastq/manifest/manifest.tsv \
+        --output-path demux.qza \
+        --input-format PairedEndFastqManifestPhred33V2
+
+## summarize demus (long)
+
+    qiime demux summarize --i-data demux.qza --o-visualization demux.qzv
+
+## truncate and trim based on what you see in the interactive quality plot of demux data
+
+    time qiime dada2 denoise-paired \
+        --i-demultiplexed-seqs demux.qza \
+        --p-trim-left-f 0 \
+        --p-trim-left-r 0 \
+        --p-trunc-len-f 161 \
+        --p-trunc-len-r 109 \
+        --o-table table-0.qza \
+        --o-representative-sequences asv-0.qza \
+        --o-denoising-stats denoising-stats-0.qza
+    
+## generate denoising stats
+
+    qiime metadata tabulate \
+      --m-input-file t3-denoising-stats-0.qza \
+      --o-visualization t3-denoising-stats-0.qzv
+
+## get your first summarized feature table 
+
+
+    qiime feature-table summarize \
+      --i-table table-0.qza \
+      --m-sample-metadata-file meta_data.tsv \
+      --o-visualization table-0.qzv
+    qiime feature-table tabulate-seqs \
+      --i-data asv-0.qza \
+      --o-visualization asv-0.qzv
+
+## download the taxonomic classifier
+    
+    wget \
+  -O 'gg-13-8-99-nb-classifier.qza' \
+  'https://docs.qiime2.org/jupyterbooks/cancer-microbiome-intervention-tutorial/data/030-tutorial-downstream/020-taxonomy/gg-13-8-99-nb-classifier.qza'
+
+## assign taxonomy info to asv sequences
+    
+    qiime feature-classifier classify-sklearn \
+      --i-classifier gg-13-8-99-nb-classifier.qza \
+      --i-reads t3-asv-0.qza \
+      --o-classification t3-taxonomy.qza
+
+## generate summary of the asv file 
+
+    qiime metadata tabulate \
+      --m-input-file t3-taxonomy.qza \
+      --o-visualization t3-taxonomy.qzv
+
+##Filtering your feature table - you shoudl go through these steps and make sure there aren't more filtering steps that you want to add to make sure there aren't any samples in your feature table that you haven't included in metadata. 
+
+    #filter out everything missing a phylum 
+    qiime taxa filter-table \
+      --i-table t3-table-0.qza \
+      --i-taxonomy t3-taxonomy.qza \
+      --p-mode contains \
+      --p-include p__ \
+      --p-exclude 'p__;,Chloroplast,Mitochondria' \
+      --o-filtered-table t3-table-1.qza
+
+    #summarize into human readable form 
+    qiime feature-table summarize \
+      --i-table t3-table-1.qza \
+      --m-sample-metadata-file feb27_meta.tsv \
+      --o-visualization t3-table-1.qzv
+
+    #remove asv sequences that are no longer in the table 
+    qiime feature-table filter-seqs \
+      --i-data t3-asv-0.qza \
+      --i-table t3-table-1.qza \
+      --o-filtered-data t3-asv-1.qza
+
+#Create taxa barplot 
+
+    qiime taxa barplot \
+      --i-table table-1.qza \
+      --i-taxonomy taxonomy.qza \
+      --m-metadata-file meta_data.tsv \
+      --o-visualization taxa-bar-plots-1.qzv
+
+#Create phylogeny 
+
+    qiime phylogeny align-to-tree-mafft-fasttree \
+      --i-sequences t3-asv-1.qza \
+      --output-dir t3-phylogeny-align-to-tree-mafft-fasttree
+
+#Identify an even sampling depth - You want to choose a depth that works for both your alpha and beta data
+
+    #alpha rarefaction for shannon 
+    qiime diversity alpha-rarefaction \
+      --i-table t3-table-1.qza \
+      --p-metrics shannon \
+      --m-metadata-file feb27_meta.tsv \
+      --p-max-depth 150 \
+      --o-visualization t3-shannon-rarefaction-plot.qzv
+
+    #alpha rarefaction for observed features 
+    qiime diversity alpha-rarefaction \
+      --i-table t3-table-1.qza \
+      --i-phylogeny rooted_tree.qza \
+      --p-max-depth 1000 \
+      --m-metadata-file feb27_meta.tsv \
+      --o-visualization alpha-rarefaction.qzv
+
+    #alpha rarefaction for evenness 
+    qiime diversity alpha-rarefaction \
+      --i-table t3-table-1.qza \
+      --i-phylogeny rooted_tree.qza \
+      --p-max-depth 1000 \
+      --p-metrics pielou_e \
+      --m-metadata-file feb27_meta.tsv \
+      --o-visualization evenness-alpha-rarefaction.qzv
+
+    #beta rarefaction for braycurtis
+    qiime diversity beta-rarefaction \
+      --i-table t3-table-1.qza \
+      --p-metric braycurtis \
+      --p-clustering-method nj \
+      --p-sampling-depth 150 \
+      --m-metadata-file feb27_meta.tsv \
+      --o-visualization t3-braycurtis-rarefaction-plot.qzv
+
+
+    #beta rarefaction for weighted unifrac - chose to do this because we use uw in future pipeline
+    qiime diversity beta-rarefaction \
+      --i-table t3-table-1.qza \
+      --p-metric weighted_unifrac \
+      --p-clustering-method nj \
+      --p-sampling-depth 150 \
+      --m-metadata-file feb27_meta.tsv \
+      --o-visualization t3-braycurtis-rarefaction-plot.qzv
+
+    #beta rarefaction for unweighted unifrac - chose to do this because we use uw in future pipeline
+    qiime diversity beta-rarefaction \
+      --i-table t3-table-1.qza \
+      --p-metric unweighted_unifrac \
+      --p-clustering-method nj \
+      --p-sampling-depth 150 \
+      --m-metadata-file feb27_meta.tsv \
+      --o-visualization t3-braycurtis-rarefaction-plot.qzv
+
+#Obtain core diversity metrics -- are there any other diversity metrics you'd like to add? evenness? chao 1? 
+    
+    #at chosen sampling depth based on the rarefactin info you gathered from above 
+    qiime diversity core-metrics-phylogenetic \
+      --i-phylogeny /Users/meganleinenbach/Documents/Thesis_3/t3-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
+      --i-table t3-table-1.qza \
+      --p-sampling-depth 150 \
+      --m-metadata-file feb27_meta.tsv \
+      --output-dir t3-diversity-core-metrics-phylogenetic
+
+#Get alpha diversity visualizations
+    
+    qiime diversity alpha-group-significance \
+      --i-alpha-diversity t3-diversity-core-metrics-phylogenetic/observed_features_vector.qza \
+      --m-metadata-file feb27_meta.tsv \
+      --o-visualization t3-alpha-group-sig-obs-feats.qzv
+
+
+#Get ordination plots 
+
+  qiime diversity umap \
+    --i-distance-matrix /Users/meganleinenbach/Documents/Thesis_3/t3-diversity-core-metrics-phylogenetic/unweighted_unifrac_distance_matrix.qza \
+    --o-umap t3-uu-umap.qza
+  
+  qiime diversity umap \
+    --i-distance-matrix /Users/meganleinenbach/Documents/Thesis_3/t3-diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
+    --o-umap t3-wu-umap.qza
+
+#Create your expanded metadata (this will be useful for putting your values into the table) 
+
+    qiime metadata tabulate \
+      --m-input-file feb27_meta.tsv t3-uu-umap.qza t3-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t3-diversity-core-metrics-phylogenetic/evenness_vector.qza t3-diversity-core-metrics-phylogenetic/shannon_vector.qza \
+      --o-visualization t3-expanded-metadata-summ.qzv
+
