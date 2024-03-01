@@ -4,7 +4,37 @@
 
 # Confirm that you have all the samples you need in metadata. 
 
-## add filtering steps here. 
+# Set-up
+    #Check I have all packages I need 
+       conda --version
+       conda config --show channels
+       parallel --version
+       fastq-dump --stdout -X 2 SRR390728
+ 
+#Create directories 
+
+  mkdir Thesis
+  cd Thesis
+
+# Begin Data Download
+    
+    #Download the data in parallel
+        cat Runs_List.txt  | parallel -j0 prefetch {}
+
+    #Move all .sra files out of their folders and into the working directory
+        find /Users/meganleinenbach/anaconda3/Thesis -type f -name "*.sra" -exec mv {} /Users/meganleinenbach/anaconda3/Thesis \;
+         
+    #Delete all empty folders in the working directory
+        find . -type d -empty -delete
+
+#Convert all .sra files into fastq files
+
+    ls *.sra | parallel -j0 fastq-dump --split-files --origfmt {}
+    #Move .fastq and .sra file types into their own folders
+        mkdir fastq
+        mv *.fastq fastq
+        mkdir sra
+        mv *.sra sra
 
 ## create manifest file
     
@@ -26,11 +56,15 @@
 
 ## demux your paired end data (long)
 
+  #set number of cores
+  	NCORES=4  
+  
+  #Qiime import
     qiime tools import \
-        --type 'SampleData[PairedEndSequencesWithQuality]' \
-        --input-path /Users/meganleinenbach/Documents/Thesis_3/fastq/manifest/manifest.tsv \
-        --output-path demux.qza \
-        --input-format PairedEndFastqManifestPhred33V2
+          --type 'SampleData[PairedEndSequencesWithQuality]' \
+          --input-path /Users/meganleinenbach/Documents/Thesis_3/fastq/manifest/manifest.tsv \
+          --output-path demux.qza \
+          --input-format PairedEndFastqManifestPhred33V2
 
 ## summarize demus (long)
 
@@ -210,3 +244,26 @@
       --m-input-file feb27_meta.tsv t3-uu-umap.qza t3-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t3-diversity-core-metrics-phylogenetic/evenness_vector.qza t3-diversity-core-metrics-phylogenetic/shannon_vector.qza \
       --o-visualization t3-expanded-metadata-summ.qzv
 
+#Get second round of taxa barplots
+
+    qiime taxa barplot \
+      --i-table t3-table-4.qza \
+      --i-taxonomy t3-taxonomy.qza \
+      --m-metadata-file feb27_meta.tsv t3-uu-umap.qza faith_pd_vector.qza evenness_vector.qza shannon_vector.qza \
+      --o-visualization t3-taxa-bar-plots-2.qzv
+
+  #if you have issues, check to see if your table has samples that your metadata does not contains. 
+  #if so, you may need to filter the feature tables more: 
+      # using filter samples function. It worked 
+         # qiime feature-table filter-samples \
+           # --i-table t3-table-1.qza \
+           # --p-min-frequency 25 \
+           # --m-metadata-file feb27_meta.tsv \
+           # --o-filtered-table t3-table-4.qza
+         # summarize into qzv file (it worked)  
+          # qiime feature-table summarize \
+           # --i-table t3-table-4.qza \
+           # --m-sample-metadata-file feb27_meta.tsv \
+           # --o-visualization t3-table-4.qzv
+
+DONE! Move things into your tables motherfucker :) 
