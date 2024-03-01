@@ -162,8 +162,8 @@
       --i-table t3-table-1.qza \
       --p-metrics shannon \
       --m-metadata-file feb27_meta.tsv \
-      --p-max-depth 150 \
-      --o-visualization t3-shannon-rarefaction-plot.qzv
+      --p-max-depth 750 \
+      --o-visualization t4-shannon-rarefaction-plot.qzv
 
     #alpha rarefaction for observed features 
     qiime diversity alpha-rarefaction \
@@ -187,83 +187,243 @@
       --i-table t3-table-1.qza \
       --p-metric braycurtis \
       --p-clustering-method nj \
-      --p-sampling-depth 150 \
+      --p-sampling-depth 550 \
       --m-metadata-file feb27_meta.tsv \
-      --o-visualization t3-braycurtis-rarefaction-plot.qzv
+      --o-visualization t4-braycurtis-rarefaction-plot.qzv
+
+    #beta rarefaction for braycurtis
+    qiime diversity beta-rarefaction \
+      --i-table t3-table-1.qza \
+      --p-metric braycurtis \
+      --p-clustering-method nj \
+      --p-sampling-depth 650 \
+      --m-metadata-file feb27_meta.tsv \
+      --o-visualization t4c-braycurtis-rarefaction-plot.qzv
 
 
     #beta rarefaction for weighted unifrac - chose to do this because we use uw in future pipeline
     qiime diversity beta-rarefaction \
       --i-table t3-table-1.qza \
+      --i-phylogeny t3-phylogeny-align-to-tree-mafft-fasttree/t3-rooted_tree.qza \
       --p-metric weighted_unifrac \
       --p-clustering-method nj \
-      --p-sampling-depth 150 \
+      --p-sampling-depth 650 \
       --m-metadata-file feb27_meta.tsv \
-      --o-visualization t3-braycurtis-rarefaction-plot.qzv
+      --o-visualization t4b-wu-rarefaction-plot.qzv
 
     #beta rarefaction for unweighted unifrac - chose to do this because we use uw in future pipeline
     qiime diversity beta-rarefaction \
       --i-table t3-table-1.qza \
+      --i-phylogeny t3-phylogeny-align-to-tree-mafft-fasttree/t3-rooted_tree.qza \
       --p-metric unweighted_unifrac \
       --p-clustering-method nj \
-      --p-sampling-depth 150 \
+      --p-sampling-depth 3000 \
       --m-metadata-file feb27_meta.tsv \
-      --o-visualization t3-braycurtis-rarefaction-plot.qzv
+      --o-visualization t4c-uu-rarefaction-plot.qzv
+
+## sampling depths:
+t4-braycurtis-rarefaction-plot.qzv: 550 (okay-good)
+t4b-braycurtis-rarefaction-plot.qzv: 450 (bad)
+t4-uu-rarefaction-plot.qzv: 550 (bad/awful)
+t4-wu-rarefaction-plot.qzv: 550 (great) 
+t4c-braycurtis-rarefaction-plot.qzv: 650 (good) 
+t4b-wu-rarefaction-plot.qzv: 650 (great) 
+t4b-uu-rarefaction-plot.qzv: 650 (bad/awful)
+t4c-uu-rarefaction-plot.qzv: 3000 (bad/awful)
+
+# chose a sampling depth of 650. 
 
 #Obtain core diversity metrics -- are there any other diversity metrics you'd like to add? evenness? chao 1? 
     
     #at chosen sampling depth based on the rarefactin info you gathered from above 
     qiime diversity core-metrics-phylogenetic \
-      --i-phylogeny /Users/meganleinenbach/Documents/Thesis_3/t3-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
+      --i-phylogeny t3-phylogeny-align-to-tree-mafft-fasttree/t3-rooted_tree.qza \
       --i-table t3-table-1.qza \
-      --p-sampling-depth 150 \
+      --p-sampling-depth 650 \
       --m-metadata-file feb27_meta.tsv \
-      --output-dir t3-diversity-core-metrics-phylogenetic
+      --output-dir t4-diversity-core-metrics-phylogenetic
 
 #Get alpha diversity visualizations
     
     qiime diversity alpha-group-significance \
-      --i-alpha-diversity t3-diversity-core-metrics-phylogenetic/observed_features_vector.qza \
+      --i-alpha-diversity t4-diversity-core-metrics-phylogenetic/observed_features_vector.qza \
       --m-metadata-file feb27_meta.tsv \
-      --o-visualization t3-alpha-group-sig-obs-feats.qzv
+      --o-visualization t4-alpha-group-sig-obs-feats.qzv
 
 
 #Get ordination plots 
 
   qiime diversity umap \
-    --i-distance-matrix /Users/meganleinenbach/Documents/Thesis_3/t3-diversity-core-metrics-phylogenetic/unweighted_unifrac_distance_matrix.qza \
-    --o-umap t3-uu-umap.qza
+    --i-distance-matrix t4-diversity-core-metrics-phylogenetic/unweighted_unifrac_distance_matrix.qza \
+    --o-umap t4-uu-umap.qza
   
   qiime diversity umap \
-    --i-distance-matrix /Users/meganleinenbach/Documents/Thesis_3/t3-diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
-    --o-umap t3-wu-umap.qza
+    --i-distance-matrix t4-diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
+    --o-umap t4-wu-umap.qza
 
 #Create your expanded metadata (this will be useful for putting your values into the table) 
 
     qiime metadata tabulate \
-      --m-input-file feb27_meta.tsv t3-uu-umap.qza t3-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t3-diversity-core-metrics-phylogenetic/evenness_vector.qza t3-diversity-core-metrics-phylogenetic/shannon_vector.qza \
-      --o-visualization t3-expanded-metadata-summ.qzv
+      --m-input-file feb27_meta.tsv t4-uu-umap.qza t4-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t4-diversity-core-metrics-phylogenetic/evenness_vector.qza t4-diversity-core-metrics-phylogenetic/shannon_vector.qza \
+      --o-visualization t4-expanded-metadata-summ.qzv
 
 #Get second round of taxa barplots
 
-    qiime taxa barplot \
-      --i-table t3-table-4.qza \
+  #run to see if you have any extraneous samples remaining in your feature table. 
+  qiime taxa barplot \
+      --i-table t3-table-1.qza \
       --i-taxonomy t3-taxonomy.qza \
-      --m-metadata-file feb27_meta.tsv t3-uu-umap.qza faith_pd_vector.qza evenness_vector.qza shannon_vector.qza \
-      --o-visualization t3-taxa-bar-plots-2.qzv
+      --m-metadata-file feb27_meta.tsv t4-uu-umap.qza t4-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t4-diversity-core-metrics-phylogenetic/evenness_vector.qza t4-diversity-core-metrics-phylogenetic/shannon_vector.qza \
+      --o-visualization t4-taxa-bar-plots-2.qzv
 
-  #if you have issues, check to see if your table has samples that your metadata does not contains. 
-  #if so, you may need to filter the feature tables more: 
-      # using filter samples function. It worked 
-         # qiime feature-table filter-samples \
-           # --i-table t3-table-1.qza \
-           # --p-min-frequency 25 \
-           # --m-metadata-file feb27_meta.tsv \
-           # --o-filtered-table t3-table-4.qza
+      # filtered out samples with fewer than 650 frequences to 
+         qiime feature-table filter-samples \
+           --i-table t3-table-1.qza \
+           --p-min-frequency 650 \
+           --m-metadata-file feb27_meta.tsv \
+           --o-filtered-table t4-table-2.qza
+
          # summarize into qzv file (it worked)  
-          # qiime feature-table summarize \
-           # --i-table t3-table-4.qza \
-           # --m-sample-metadata-file feb27_meta.tsv \
-           # --o-visualization t3-table-4.qzv
+          qiime feature-table summarize \
+           --i-table t4-table-2.qza \
+           --m-sample-metadata-file feb27_meta.tsv \
+           --o-visualization t4-table-2.qzv
+
+  qiime taxa barplot \
+      --i-table t4-table-2.qza \
+      --i-taxonomy t3-taxonomy.qza \
+      --m-metadata-file feb27_meta.tsv t4-uu-umap.qza t4-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t4-diversity-core-metrics-phylogenetic/evenness_vector.qza t4-diversity-core-metrics-phylogenetic/shannon_vector.qza \
+      --o-visualization t4-taxa-bar-plots-2.qzv
 
 DONE! Move things into your tables motherfucker :) 
+
+
+Redo with the t4-table-2.qza files 
+
+##filter out asvs that were removed 
+qiime feature-table filter-seqs \
+      --i-data t3-asv-1.qza \
+      --i-table t4-table-2.qza \
+      --o-filtered-data t4-asv-2.qza
+
+## tabulate sequences 
+
+    qiime feature-table tabulate-seqs \
+      --i-data t4-asv-2.qza \
+      --o-visualization t4-asv-2.qzv
+
+## assign taxonomy info to asv sequences
+    
+    qiime feature-classifier classify-sklearn \
+      --i-classifier gg-13-8-99-nb-classifier.qza \
+      --i-reads t4-asv-2.qza \
+      --o-classification t4-taxonomy.qza
+
+## generate summary of the asv file 
+
+    qiime metadata tabulate \
+      --m-input-file t4-taxonomy.qza \
+      --o-visualization t4-taxonomy.qzv
+
+#Create taxa barplot 
+
+    qiime taxa barplot \
+      --i-table t4-table-2.qza \
+      --i-taxonomy t4-taxonomy.qza \
+      --m-metadata-file feb27_meta.tsv \
+      --o-visualization t4-taxa-bar-plots-3.qzv
+
+#Create phylogeny 
+
+    qiime phylogeny align-to-tree-mafft-fasttree \
+      --i-sequences t4-asv-2.qza \
+      --output-dir t4-phylogeny-align-to-tree-mafft-fasttree
+
+# chose a sampling depth of 650. 
+#Obtain core diversity metrics -- are there any other diversity metrics you'd like to add? evenness? chao 1? 
+    
+    #at chosen sampling depth based on the rarefactin info you gathered from above 
+    qiime diversity core-metrics-phylogenetic \
+      --i-phylogeny t4-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
+      --i-table t4-table-2.qza \
+      --p-sampling-depth 650 \
+      --m-metadata-file feb27_meta.tsv \
+      --output-dir t4b-diversity-core-metrics-phylogenetic
+
+#Get alpha diversity visualizations
+    
+    qiime diversity alpha-group-significance \
+      --i-alpha-diversity t4b-diversity-core-metrics-phylogenetic/observed_features_vector.qza \
+      --m-metadata-file feb27_meta.tsv \
+      --o-visualization t4b-alpha-group-sig-obs-feats.qzv
+
+
+#Get ordination plots 
+
+  qiime diversity umap \
+    --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/unweighted_unifrac_distance_matrix.qza \
+    --o-umap t4b-uu-umap.qza
+  
+  qiime diversity umap \
+    --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
+    --o-umap t4b-wu-umap.qza
+
+#Create your expanded metadata (this will be useful for putting your values into the table) 
+
+    qiime metadata tabulate \
+      --m-input-file feb27_meta.tsv t4b-uu-umap.qza t4b-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t4b-diversity-core-metrics-phylogenetic/evenness_vector.qza t4b-diversity-core-metrics-phylogenetic/shannon_vector.qza t4b-diversity-core-metrics-phylogenetic/observed_features_vector.qza \
+      --o-visualization t4b-expanded-metadata-summ.qzv
+
+
+##get chao 1
+qiime diversity alpha \
+      --i-table t4-table-2.qza \
+      --p-metric chao1 \
+      --o-alpha-diversity chao1.qza
+
+## summarize
+qiime metadata tabulate \
+  --m-input-file chao1.qza \
+  --o-visualization chao1.qzv
+
+
+##summarize uu map 
+qiime metadata tabulate \
+  --m-input-file t4b-wu-umap.qza \
+  --o-visualization t4b-wu-umap.qzv
+
+##get beta diversity statistics 
+qiime diversity beta \
+  --i-table t4-table-2.qza \
+  --p-metric braycurtis \
+  --o-distance-matrix braycurtis.qza
+#I cannot summarize this and I'm not sure that I'm going to be able to use it for anything. 
+
+#see if there are beta diversity differences by country 
+qiime diversity beta-group-significance \
+  --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file feb27_meta.tsv \
+  --m-metadata-column geo_loc_name_country \
+  --o-visualization t4b-diversity-core-metrics-phylogenetic/unweighted-unifrac-donor-significance.qzv
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file feb27_meta.tsv \
+  --m-metadata-column geo_loc_name_country \
+  --o-visualization t4b-diversity-core-metrics-phylogenetic/weighted-unifrac-donor-significance.qzv
+
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/bray_curtis_distance_matrix.qza \
+  --m-metadata-file feb27_meta.tsv \
+  --m-metadata-column geo_loc_name_country \
+  --o-visualization t4b-diversity-core-metrics-phylogenetic/bray-curtis-country-significance.qzv
+
+
+#alpha group significance 
+
+qiime diversity alpha-group-significance \
+ --i-alpha-diversity t4b-diversity-core-metrics-phylogenetic/evenness_vector.qza \
+ --m-metadata-file feb27_meta.tsv \
+ --o-visualization t4b-diversity-core-metrics-phylogenetic/evenness_statistics.qzv
+ --verbose
