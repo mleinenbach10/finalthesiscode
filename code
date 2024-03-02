@@ -422,8 +422,19 @@ qiime diversity beta-group-significance \
 
 #alpha group significance 
 
+#redo evennness 
+
+qiime diversity-lib pielou-evenness \
+    --i-table t4-table-2.qza \
+    --o-vector pielou-vector.qza
+
 qiime diversity alpha-group-significance \
- --i-alpha-diversity t4b-diversity-core-metrics-phylogenetic/evenness_vector.qza \
+ --i-alpha-diversity pielou-vector.qza \
  --m-metadata-file feb27_meta.tsv \
  --o-visualization t4b-diversity-core-metrics-phylogenetic/evenness_statistics.qzv
- --verbose
+
+#chao 1 significance
+qiime diversity alpha-group-significance \
+ --i-alpha-diversity chao1.qza \
+ --m-metadata-file feb27_meta.tsv \
+ --o-visualization t4b-diversity-core-metrics-phylogenetic/chao1-statistics.qzv
