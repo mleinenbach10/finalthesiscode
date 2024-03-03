@@ -1,86 +1,116 @@
-# Document your metadata & run lists
-  Metadata: feb27_meta.tsv
-  Runs list: feb27_runs.txt
+#This code is prepared to help with Trial 5 of the thesis: Age and urinary microbial diversity in women with and without TC
 
-# Confirm that you have all the samples you need in metadata. 
+### Dowloading NCBI Data for QIIME2 Tutorial ###
 
-# Set-up
-    #Check I have all packages I need 
-       conda --version
-       conda config --show channels
-       parallel --version
-       fastq-dump --stdout -X 2 SRR390728
- 
-#Create directories 
+#00. Set-up
 
-  mkdir Thesis
-  cd Thesis
+        #1. Mini Conda: 
+        Conda --version
+          #conda 24.1.0
 
-# Begin Data Download
-    
+        #2. BioConda: https://bioconda.github.io/user/insta...
+        conda config --show channels
+        
+        #3. GNU Parallel: https://www.gnu.org/software/parallel/
+        parallel --version
+          #20240122
+            
+        #4. Install SRA tools https://github.com/ncbi/sra-tools/wiki/02.-Installing-SRA-Toolkit#the-sra-toolkit-provides-64-bit-binary-installations-for-the-ubuntu-and-centos-linux-distributions-for-mac-os-x-and-for-windows
+        curl --output sratoolkit.tar.gz https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-mac64.tar.gz
+        tar -vxzf sratoolkit.tar.gz
+        export PATH=$PATH:$PWD/sratoolkit.3.0.10-mac-x86_64/bin #be sure to change the version & mac title to the one that's on your computer
+        which fastq-dump #testing functionality
+        fastq-dump --stdout -X 2 SRR390728 #testing functionality 
+
+        #5. QIIME2: https://docs.qiime2.org/2020.8/install/native/#install-qiime-2-within-a-conda-environment
+        qiime --version 
+          #2023.9.1
+
+    #Create Directory
+    mkdir Thesis5
+    cd Thesis5
+
+#01. DONE ALREADY Go to the NCBI Studies Browser
+    #1. Downloaded the acession list from NCBI: SRR_Acc_List.txt
+
+#02. Create Metadata TSV for QIIME2
+  #qiime documentation for atacoma soil: https://docs.qiime2.org/2023.9/tutorials/atacama-soils/
+  #sample google sheet: https://docs.google.com/spreadsheets/d/1MNh2ZFX4rRhtDc5FjVDlzhZ4FoWKl5pgC4J5ukV6Nh4/edit?usp=sharing
+    #1. Copy and paste all columns and relevant rows into a new googlesheet
+    #2. Add a row below the header row
+    #3. Move barcode column to second column in the google sheets
+    #4. Rename the "Run" column as "sample-id"
+    #5. Add #q2:types values to each column (i.e., "categorical", "numeric")
+    #6. Download as .tsv (tab separated value)
+    #7. Rename metadata to gaspari-metadata.tsv
+
+#03. Begin Data Download
     #Download the data in parallel
-        cat Runs_List.txt  | parallel -j0 prefetch {}
+        cat SRR_Acc_List.txt  | parallel -j0 prefetch {}
 
     #Move all .sra files out of their folders and into the working directory
-        find /Users/meganleinenbach/anaconda3/Thesis -type f -name "*.sra" -exec mv {} /Users/meganleinenbach/anaconda3/Thesis \;
-         
+        find /Users/meganleinenbach/Documents/Thesis5 -type f -name "*.sra" -exec mv {} /Users/meganleinenbach/Documents/Thesis5 \;
+
     #Delete all empty folders in the working directory
         find . -type d -empty -delete
 
-#Convert all .sra files into fastq files
-
+#04. Convert all .sra files into fastq files
     ls *.sra | parallel -j0 fastq-dump --split-files --origfmt {}
+
     #Move .fastq and .sra file types into their own folders
         mkdir fastq
         mv *.fastq fastq
         mkdir sra
         mv *.sra sra
 
-## create manifest file
-    
-    cd /Thesis_3/fastq
+#05. Prepare files for QIIME2 import
 
+    cd fastq
     mkdir manifest
 
-    echo "# paired-end PHRED 33 fastq manifest file for forward and reverse reads" > manifest1.txt
-    
-    echo -e "sample-id\tforward-absolute-filepath\treverse-absolute-filepath" >> manifest1.txt
-    
-    ls *.fastq | cut -d "_" -f 1 | sort | uniq | parallel -j0 --keep-order 'echo -e "{/}\t"$PWD"/{/}_1.fastq\t"$PWD"/{/}_2.fastq"' | tr -d "'" > manifest2.txt
-    
-    cat manifest1.txt manifest2.txt > manifest/manifest.tsv
-    
-    rm *.txt
-    
-    cd ..
+    #Create Manifest file (https://docs.qiime2.org/2020.8/tutorials/importing/#fastq-manifest-formats)
 
-## demux your paired end data (long)
+    	#create header
+				echo "# paired-end PHRED 33 fastq manifest file for forward and reverse reads" > manifest1.txt
+				echo -e "sample-id\tforward-absolute-filepath\treverse-absolute-filepath" >> manifest1.txt
 
-  #set number of cores
-  	NCORES=4  
-  
-  #Qiime import
-    qiime tools import \
-          --type 'SampleData[PairedEndSequencesWithQuality]' \
-          --input-path /Users/meganleinenbach/Documents/Thesis_3/fastq/manifest/manifest.tsv \
-          --output-path demux.qza \
-          --input-format PairedEndFastqManifestPhred33V2
+			#create text file with ID path to forward and path to reverse separated by tabs
+				 ls *.fastq | cut -d "_" -f 1 | sort | uniq | parallel -j0 --keep-order 'echo -e "{/}\t"$PWD"/{/}_1.fastq\t"$PWD"/{/}_2.fastq"' | tr -d "'" > manifest2.txt
+			
+      #create full file
+				cat manifest1.txt manifest2.txt > manifest/manifest.tsv
+		
+      #Delete text files
+  			rm *.txt
+  			cd ..  
 
-## summarize demus (long)
+#06. Begin Qiime data import 
+      #determine number of cores
+        sysctl -n hw.ncpu
+      #set number of cores
+  			NCORES=8
 
-    qiime demux summarize --i-data demux.qza --o-visualization demux.qzv
+      #import metagenomic data
+        qiime tools import \
+        --type 'SampleData[PairedEndSequencesWithQuality]' \
+        --input-path fastq/manifest/manifest.tsv \
+        --output-path 5-demux.qza \
+        --input-format PairedEndFastqManifestPhred33V2
+            
+        qiime demux summarize --i-data 5-demux.qza --o-visualization 5-demux.qzv
+        ### View Output
 
 ## truncate and trim based on what you see in the interactive quality plot of demux data
 
     time qiime dada2 denoise-paired \
-        --i-demultiplexed-seqs demux.qza \
+        --i-demultiplexed-seqs 5-demux.qza \
         --p-trim-left-f 0 \
         --p-trim-left-r 0 \
         --p-trunc-len-f 161 \
         --p-trunc-len-r 109 \
         --o-table table-0.qza \
-        --o-representative-sequences asv-0.qza \
-        --o-denoising-stats denoising-stats-0.qza
+        --o-representative-sequences 5-asv-0.qza \
+        --o-denoising-stats 5-denoising-stats-0.qza
     
 ## generate denoising stats
 
