@@ -99,35 +99,35 @@
             
         qiime demux summarize --i-data 5-demux.qza --o-visualization 5-demux.qzv
         ### View Output
+	# forward truncate at 238
+	# reverse truncate at 157
 
 ## truncate and trim based on what you see in the interactive quality plot of demux data
 
-    time qiime dada2 denoise-paired \
-        --i-demultiplexed-seqs 5-demux.qza \
-        --p-trim-left-f 0 \
-        --p-trim-left-r 0 \
-        --p-trunc-len-f 161 \
-        --p-trunc-len-r 109 \
-        --o-table table-0.qza \
-        --o-representative-sequences 5-asv-0.qza \
-        --o-denoising-stats 5-denoising-stats-0.qza
+qiime dada2 denoise-paired \
+    --i-demultiplexed-seqs 5-demux.qza \
+    --p-trunc-len-f 238 \
+    --p-trunc-len-r 157 \
+    --o-representative-sequences asv-0.qza \
+    --o-table 5-table-0.qza \
+    --o-denoising-stats 5-denoising-stats-0.qza
     
 ## generate denoising stats
 
     qiime metadata tabulate \
-      --m-input-file t3-denoising-stats-0.qza \
-      --o-visualization t3-denoising-stats-0.qzv
+      --m-input-file 5-denoising-stats-0.qza \
+      --o-visualization 5-denoising-stats-0.qzv
 
 ## get your first summarized feature table 
 
 
     qiime feature-table summarize \
-      --i-table table-0.qza \
-      --m-sample-metadata-file meta_data.tsv \
-      --o-visualization table-0.qzv
+      --i-table 5-table-0.qza \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization 5-table-0.qzv
     qiime feature-table tabulate-seqs \
       --i-data asv-0.qza \
-      --o-visualization asv-0.qzv
+      --o-visualization 5-asv-0.qzv
 
 ## download the taxonomic classifier
     
@@ -139,87 +139,87 @@
     
     qiime feature-classifier classify-sklearn \
       --i-classifier gg-13-8-99-nb-classifier.qza \
-      --i-reads t3-asv-0.qza \
-      --o-classification t3-taxonomy.qza
+      --i-reads asv-0.qza \
+      --o-classification 5-taxonomy.qza
 
 ## generate summary of the asv file 
 
     qiime metadata tabulate \
-      --m-input-file t3-taxonomy.qza \
-      --o-visualization t3-taxonomy.qzv
+      --m-input-file 5-taxonomy.qza \
+      --o-visualization 5-taxonomy.qzv
 
 ##Filtering your feature table - you shoudl go through these steps and make sure there aren't more filtering steps that you want to add to make sure there aren't any samples in your feature table that you haven't included in metadata. 
 
     #filter out everything missing a phylum 
     qiime taxa filter-table \
-      --i-table t3-table-0.qza \
-      --i-taxonomy t3-taxonomy.qza \
+      --i-table 5-table-0.qza \
+      --i-taxonomy 5-taxonomy.qza \
       --p-mode contains \
       --p-include p__ \
       --p-exclude 'p__;,Chloroplast,Mitochondria' \
-      --o-filtered-table t3-table-1.qza
+      --o-filtered-table t5-table-1.qza
 
     #summarize into human readable form 
     qiime feature-table summarize \
-      --i-table t3-table-1.qza \
-      --m-sample-metadata-file feb27_meta.tsv \
-      --o-visualization t3-table-1.qzv
+      --i-table t5-table-1.qza \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization t5-table-1.qzv
 
     #remove asv sequences that are no longer in the table 
     qiime feature-table filter-seqs \
-      --i-data t3-asv-0.qza \
-      --i-table t3-table-1.qza \
-      --o-filtered-data t3-asv-1.qza
+      --i-data asv-0.qza \
+      --i-table t5-table-1.qza \
+      --o-filtered-data 5-asv-1.qza
 
 #Create taxa barplot 
 
     qiime taxa barplot \
-      --i-table table-1.qza \
-      --i-taxonomy taxonomy.qza \
-      --m-metadata-file meta_data.tsv \
-      --o-visualization taxa-bar-plots-1.qzv
+      --i-table t5-table-1.qza \
+      --i-taxonomy 5-taxonomy.qza \
+      --m-metadata-file gaspari-metadata.tsv \
+      --o-visualization 5-taxa-bar-plots-1.qzv
 
 #Create phylogeny 
 
     qiime phylogeny align-to-tree-mafft-fasttree \
-      --i-sequences t3-asv-1.qza \
-      --output-dir t3-phylogeny-align-to-tree-mafft-fasttree
+      --i-sequences 5-asv-1.qza \
+      --output-dir 5-phylogeny-align-to-tree-mafft-fasttree
 
 #Identify an even sampling depth - You want to choose a depth that works for both your alpha and beta data
 
     #alpha rarefaction for shannon 
     qiime diversity alpha-rarefaction \
-      --i-table t3-table-1.qza \
+      --i-table t5-table-1.qza \
       --p-metrics shannon \
-      --m-metadata-file feb27_meta.tsv \
-      --p-max-depth 750 \
-      --o-visualization t4-shannon-rarefaction-plot.qzv
+      --m-metadata-file gaspari-metadata.tsv \
+      --p-max-depth 30 \
+      --o-visualization 5c-shannon-rarefaction-plot.qzv
 
     #alpha rarefaction for observed features 
     qiime diversity alpha-rarefaction \
-      --i-table t3-table-1.qza \
-      --i-phylogeny rooted_tree.qza \
+      --i-table t5-table-1.qza \
+      --i-phylogeny 5-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
       --p-max-depth 1000 \
-      --m-metadata-file feb27_meta.tsv \
-      --o-visualization alpha-rarefaction.qzv
+      --m-metadata-file gaspari-metadata.tsv \
+      --o-visualization 5-alpha-rarefaction.qzv
 
     #alpha rarefaction for evenness 
     qiime diversity alpha-rarefaction \
-      --i-table t3-table-1.qza \
-      --i-phylogeny rooted_tree.qza \
+      --i-table t5-table-1.qza \
+      --i-phylogeny 5-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
       --p-max-depth 1000 \
       --p-metrics pielou_e \
-      --m-metadata-file feb27_meta.tsv \
-      --o-visualization evenness-alpha-rarefaction.qzv
+      --m-metadata-file gaspari-metadata.tsv \
+      --o-visualization 5-evenness-alpha-rarefaction.qzv
 
     #beta rarefaction for braycurtis
     qiime diversity beta-rarefaction \
-      --i-table t3-table-1.qza \
+      --i-table t5-table-1.qza \
       --p-metric braycurtis \
       --p-clustering-method nj \
-      --p-sampling-depth 550 \
-      --m-metadata-file feb27_meta.tsv \
-      --o-visualization t4-braycurtis-rarefaction-plot.qzv
+      --p-sampling-depth 26 \
+      --m-metadata-file gaspari-metadata.tsv \
+      --o-visualization 5c-braycurtis-rarefaction-plot.qzv
 
     #beta rarefaction for braycurtis
     qiime diversity beta-rarefaction \
@@ -233,221 +233,340 @@
 
     #beta rarefaction for weighted unifrac - chose to do this because we use uw in future pipeline
     qiime diversity beta-rarefaction \
-      --i-table t3-table-1.qza \
-      --i-phylogeny t3-phylogeny-align-to-tree-mafft-fasttree/t3-rooted_tree.qza \
+      --i-table t5-table-1.qza \
+      --i-phylogeny 5-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
       --p-metric weighted_unifrac \
       --p-clustering-method nj \
-      --p-sampling-depth 650 \
-      --m-metadata-file feb27_meta.tsv \
-      --o-visualization t4b-wu-rarefaction-plot.qzv
+      --p-sampling-depth 25 \
+      --m-metadata-file gaspari-metadata.tsv \
+      --o-visualization 5-wu-rarefaction-plot.qzv
 
     #beta rarefaction for unweighted unifrac - chose to do this because we use uw in future pipeline
     qiime diversity beta-rarefaction \
-      --i-table t3-table-1.qza \
-      --i-phylogeny t3-phylogeny-align-to-tree-mafft-fasttree/t3-rooted_tree.qza \
+      --i-table t5-table-1.qza \
+      --i-phylogeny 5-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
       --p-metric unweighted_unifrac \
       --p-clustering-method nj \
-      --p-sampling-depth 3000 \
-      --m-metadata-file feb27_meta.tsv \
-      --o-visualization t4c-uu-rarefaction-plot.qzv
+      --p-sampling-depth 25 \
+      --m-metadata-file gaspari-metadata.tsv \
+      --o-visualization 5-uu-rarefaction-plot.qzv
 
 ## sampling depths:
-t4-braycurtis-rarefaction-plot.qzv: 550 (okay-good)
-t4b-braycurtis-rarefaction-plot.qzv: 450 (bad)
-t4-uu-rarefaction-plot.qzv: 550 (bad/awful)
-t4-wu-rarefaction-plot.qzv: 550 (great) 
-t4c-braycurtis-rarefaction-plot.qzv: 650 (good) 
-t4b-wu-rarefaction-plot.qzv: 650 (great) 
-t4b-uu-rarefaction-plot.qzv: 650 (bad/awful)
-t4c-uu-rarefaction-plot.qzv: 3000 (bad/awful)
+going with 25, so I can keep samples, even though the beta rarefaction plots look jank. 
 
-# chose a sampling depth of 650. 
+# chose a sampling depth of 25 
 
 #Obtain core diversity metrics -- are there any other diversity metrics you'd like to add? evenness? chao 1? 
     
     #at chosen sampling depth based on the rarefactin info you gathered from above 
     qiime diversity core-metrics-phylogenetic \
-      --i-phylogeny t3-phylogeny-align-to-tree-mafft-fasttree/t3-rooted_tree.qza \
-      --i-table t3-table-1.qza \
-      --p-sampling-depth 650 \
-      --m-metadata-file feb27_meta.tsv \
-      --output-dir t4-diversity-core-metrics-phylogenetic
+      --i-phylogeny 5-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
+      --i-table t5-table-1.qza \
+      --p-sampling-depth 25 \
+      --m-metadata-file gaspari-metadata.tsv \
+      --output-dir 5-diversity-core-metrics-phylogenetic
 
 #Get alpha diversity visualizations
     
     qiime diversity alpha-group-significance \
-      --i-alpha-diversity t4-diversity-core-metrics-phylogenetic/observed_features_vector.qza \
-      --m-metadata-file feb27_meta.tsv \
-      --o-visualization t4-alpha-group-sig-obs-feats.qzv
+      --i-alpha-diversity 5-diversity-core-metrics-phylogenetic/observed_features_vector.qza \
+      --m-metadata-file gaspari-metadata.tsv \
+      --o-visualization 5-alpha-group-sig-obs-feats.qzv
 
 
 #Get ordination plots 
 
   qiime diversity umap \
-    --i-distance-matrix t4-diversity-core-metrics-phylogenetic/unweighted_unifrac_distance_matrix.qza \
-    --o-umap t4-uu-umap.qza
+    --i-distance-matrix 5-diversity-core-metrics-phylogenetic/unweighted_unifrac_distance_matrix.qza \
+    --o-umap 5-uu-umap.qza
   
   qiime diversity umap \
-    --i-distance-matrix t4-diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
-    --o-umap t4-wu-umap.qza
+    --i-distance-matrix 5-diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
+    --o-umap 5-wu-umap.qza
 
 #Create your expanded metadata (this will be useful for putting your values into the table) 
 
     qiime metadata tabulate \
-      --m-input-file feb27_meta.tsv t4-uu-umap.qza t4-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t4-diversity-core-metrics-phylogenetic/evenness_vector.qza t4-diversity-core-metrics-phylogenetic/shannon_vector.qza \
-      --o-visualization t4-expanded-metadata-summ.qzv
+      --m-input-file gaspari-metadata.tsv 5-uu-umap.qza 5-diversity-core-metrics-phylogenetic/faith_pd_vector.qza 5-diversity-core-metrics-phylogenetic/evenness_vector.qza 5-diversity-core-metrics-phylogenetic/shannon_vector.qza \
+      --o-visualization 5-expanded-metadata-summ.qzv
 
 #Get second round of taxa barplots
 
   #run to see if you have any extraneous samples remaining in your feature table. 
   qiime taxa barplot \
-      --i-table t3-table-1.qza \
-      --i-taxonomy t3-taxonomy.qza \
-      --m-metadata-file feb27_meta.tsv t4-uu-umap.qza t4-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t4-diversity-core-metrics-phylogenetic/evenness_vector.qza t4-diversity-core-metrics-phylogenetic/shannon_vector.qza \
-      --o-visualization t4-taxa-bar-plots-2.qzv
+      --i-table t5-table-1.qza \
+      --i-taxonomy 5-taxonomy.qza \
+      --m-metadata-file gaspari-metadata.tsv 5-uu-umap.qza 5-diversity-core-metrics-phylogenetic/faith_pd_vector.qza 5-diversity-core-metrics-phylogenetic/evenness_vector.qza 5-diversity-core-metrics-phylogenetic/shannon_vector.qza \
+      --o-visualization 5-taxa-bar-plots-2.qzv
 
-      # filtered out samples with fewer than 650 frequences to 
+      # filtered out samples with fewer than 25 frequences to 
          qiime feature-table filter-samples \
-           --i-table t3-table-1.qza \
-           --p-min-frequency 650 \
-           --m-metadata-file feb27_meta.tsv \
-           --o-filtered-table t4-table-2.qza
+           --i-table t5-table-1.qza \
+           --p-min-frequency 25 \
+           --m-metadata-file gaspari-metadata.tsv \
+           --o-filtered-table 5-table-2.qza
 
          # summarize into qzv file (it worked)  
           qiime feature-table summarize \
-           --i-table t4-table-2.qza \
-           --m-sample-metadata-file feb27_meta.tsv \
-           --o-visualization t4-table-2.qzv
+           --i-table 5-table-2.qza \
+           --m-sample-metadata-file gaspari-metadata.tsv \
+           --o-visualization 5-table-2.qzv
 
-  qiime taxa barplot \
-      --i-table t4-table-2.qza \
-      --i-taxonomy t3-taxonomy.qza \
-      --m-metadata-file feb27_meta.tsv t4-uu-umap.qza t4-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t4-diversity-core-metrics-phylogenetic/evenness_vector.qza t4-diversity-core-metrics-phylogenetic/shannon_vector.qza \
-      --o-visualization t4-taxa-bar-plots-2.qzv
+qiime taxa barplot \
+      --i-table 5-table-2.qza \
+      --i-taxonomy 5-taxonomy.qza \
+      --m-metadata-file gaspari-metadata.tsv 5-uu-umap.qza 5-diversity-core-metrics-phylogenetic/faith_pd_vector.qza 5-diversity-core-metrics-phylogenetic/evenness_vector.qza 5-diversity-core-metrics-phylogenetic/shannon_vector.qza \
+      --o-visualization 5-taxa-bar-plots-2.qzv
+
+##get chao 1
+qiime diversity alpha \
+      --i-table 5-table-2.qza \
+      --p-metric chao1 \
+      --o-alpha-diversity 5-chao1.qza
+
+## summarize
+qiime metadata tabulate \
+  --m-input-file 5-chao1.qza \
+  --o-visualization 5-chao1.qzv
+
+#chao 1 significance
+qiime diversity alpha-group-significance \
+ --i-alpha-diversity 5-chao1.qza \
+ --m-metadata-file gaspari-metadata.tsv \
+ --o-visualization chao1-statistics.qzv
+
+#evenness significance
+qiime diversity alpha-group-significance \
+ --i-alpha-diversity evenness_vector.qza \
+ --m-metadata-file gaspari-metadata.tsv \
+ --o-visualization evenness-statistics.qzv
+
+##get beta diversity statistics 
+# get bray curtis
+qiime diversity beta \
+  --i-table 5-table-2.qza\
+  --p-metric braycurtis \
+  --o-distance-matrix 5-braycurtis.qza
+#I cannot summarize this and I'm not sure that I'm going to be able to use it for anything.
+
+#beta bc significance for 2-way-age
+qiime diversity beta-group-significance \
+  --i-distance-matrix bray_curtis_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 2-way-age \
+  --o-visualization bray-curtis-country-significance-2-way-age.qzv
+
+#beta bc significance for 3-way-age
+qiime diversity beta-group-significance \
+  --i-distance-matrix bray_curtis_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 3-way-age \
+  --o-visualization bray-curtis-country-significance-3-way-age.qzv
+
+#beta bc significance for 3-way-infection
+qiime diversity beta-group-significance \
+  --i-distance-matrix bray_curtis_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 3-way-infection \
+  --o-visualization bray-curtis-country-significance-3-way-infection.qzv
+
+#beta bc significance for 2-way-infection
+qiime diversity beta-group-significance \
+  --i-distance-matrix bray_curtis_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 2-way-infection \
+  --o-visualization bray-curtis-country-significance-2-way-infection.qzv
+
+#weighted unifract significance for 2-way-age
+qiime diversity beta-group-significance \
+  --i-distance-matrix weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 2-way-age \
+  --o-visualization weighted-unifrac-donor-significance-2-way-age.qzv
+
+#weighted unifract significance for 3-way-age
+qiime diversity beta-group-significance \
+  --i-distance-matrix weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 3-way-age \
+  --o-visualization weighted-unifrac-donor-significance-3-way-age.qzv
+
+#weighted unifract significance for 2-way-infection
+qiime diversity beta-group-significance \
+  --i-distance-matrix weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 2-way-infection \
+  --o-visualization weighted-unifrac-donor-significance-2-way-infection.qzv
+
+#weighted unifract significance for 3-way-infection
+qiime diversity beta-group-significance \
+  --i-distance-matrix weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 3-way-infection \
+  --o-visualization weighted-unifrac-donor-significance-3-way-infectionn.qzv
+
+#ununweighted unifract significance for 2-way-age
+qiime diversity beta-group-significance \
+  --i-distance-matrix unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 2-way-age \
+  --o-visualization unweighted-unifrac-donor-significance-2-way-age.qzv
+
+#unweighted unifract significance for 3-way-age
+qiime diversity beta-group-significance \
+  --i-distance-matrix unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 3-way-age \
+  --o-visualization unweighted-unifrac-donor-significance-3-way-age.qzv
+
+#unweighted unifract significance for 2-way-infection
+qiime diversity beta-group-significance \
+  --i-distance-matrix unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 2-way-infection \
+  --o-visualization unweighted-unifrac-donor-significance-2-way-infection.qzv
+
+#unweighted unifract significance for 3-way-infection
+qiime diversity beta-group-significance \
+  --i-distance-matrix unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 3-way-infection \
+  --o-visualization unweighted-unifrac-donor-significance-3-way-infectionn.qzv
+
+
+
+-- working here 
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 2-way-age \
+  --o-visualization unweighted-unifrac-donor-significance-2-way-age.qzv
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 3-way-age \
+  --o-visualization unweighted-unifrac-donor-significance-3-way-age.qzv
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 2-way-infection \
+  --o-visualization unweighted-unifrac-donor-significance-2-way-infection.qzv
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --m-metadata-column 3-way-infection \
+  --o-visualization unweighted-unifrac-donor-significance-3-way-infectionn.qzv
+
+#relative abundances of taxonomy analysis (classes)
+
+#first, create a specific feature table for each category. 
+      # filtered out samples with fewer than 25 frequences to 
+         qiime feature-table filter-samples \
+           --i-table 5-table-2.qza \
+           --m-metadata-file gaspari-metadata.tsv \
+	   --p-where '[3-way-infection]="20s_NI"' \
+           --o-filtered-table 5-20s_NI-table.qza
+	qiime feature-table filter-samples \
+           --i-table 5-table-2.qza \
+           --m-metadata-file gaspari-metadata.tsv \
+	   --p-where '[3-way-infection]="20s_TC"' \
+           --o-filtered-table 5-20s_TC-table.qza
+	qiime feature-table filter-samples \
+           --i-table 5-table-2.qza \
+           --m-metadata-file gaspari-metadata.tsv \
+	   --p-where '[3-way-infection]="30s_NI"' \
+           --o-filtered-table 5-30s_NI-table.qza
+	qiime feature-table filter-samples \
+           --i-table 5-table-2.qza \
+           --m-metadata-file gaspari-metadata.tsv \
+	   --p-where '[3-way-infection]="30s_TC"' \
+           --o-filtered-table 5-30s_TC-table.qza
+	qiime feature-table filter-samples \
+           --i-table 5-table-2.qza \
+           --m-metadata-file gaspari-metadata.tsv \
+	   --p-where '[3-way-infection]="40s_NI"' \
+           --o-filtered-table 5-40s_NI-table.qza
+	qiime feature-table filter-samples \
+           --i-table 5-table-2.qza \
+           --m-metadata-file gaspari-metadata.tsv \
+	   --p-where '[3-way-infection]="40s_TC"' \
+           --o-filtered-table 5-40s_TC-table.qza
+
+# 20s_NI
+qiime taxa collapse \
+  --i-table 5-20s_NI-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-20s_NI-table.qza 
+qiime feature-table summarize \
+      --i-table class-20s_NI-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-20s_NI-table.qzv
+
+#20s_TC
+qiime taxa collapse \
+  --i-table 5-20s_TC-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-20s_TC-table.qza 
+qiime feature-table summarize \
+      --i-table class-20s_TC-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-20s_TC-table.qzv
+
+# 30s_NI
+qiime taxa collapse \
+  --i-table 5-30s_NI-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-30s_NI-table.qza 
+qiime feature-table summarize \
+      --i-table class-30s_NI-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-30s_NI-table.qzv
+
+#30s_TC
+qiime taxa collapse \
+  --i-table 5-30s_TC-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-30s_TC-table.qza 
+qiime feature-table summarize \
+      --i-table class-30s_TC-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-30s_TC-table.qzv
+
+# 40s_NI
+qiime taxa collapse \
+  --i-table 5-40s_NI-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-40s_NI-table.qza 
+qiime feature-table summarize \
+      --i-table class-40s_NI-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-40s_NI-table.qzv
+
+#40s_TC
+qiime taxa collapse \
+  --i-table 5-40s_TC-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-40s_TC-table.qza 
+qiime feature-table summarize \
+      --i-table class-40s_TC-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-40s_TC-table.qzv
+## I don't have any remaining smaples of peopel who are over 40 with a TC infection. 
 
 DONE! Move things into your tables motherfucker :) 
 
 
-Redo with the t4-table-2.qza files 
 
-##filter out asvs that were removed 
-qiime feature-table filter-seqs \
-      --i-data t3-asv-1.qza \
-      --i-table t4-table-2.qza \
-      --o-filtered-data t4-asv-2.qza
-
-## tabulate sequences 
-
-    qiime feature-table tabulate-seqs \
-      --i-data t4-asv-2.qza \
-      --o-visualization t4-asv-2.qzv
-
-## assign taxonomy info to asv sequences
-    
-    qiime feature-classifier classify-sklearn \
-      --i-classifier gg-13-8-99-nb-classifier.qza \
-      --i-reads t4-asv-2.qza \
-      --o-classification t4-taxonomy.qza
-
-## generate summary of the asv file 
-
-    qiime metadata tabulate \
-      --m-input-file t4-taxonomy.qza \
-      --o-visualization t4-taxonomy.qzv
-
-#Create taxa barplot 
-
-    qiime taxa barplot \
-      --i-table t4-table-2.qza \
-      --i-taxonomy t4-taxonomy.qza \
-      --m-metadata-file feb27_meta.tsv \
-      --o-visualization t4-taxa-bar-plots-3.qzv
-
-#Create phylogeny 
-
-    qiime phylogeny align-to-tree-mafft-fasttree \
-      --i-sequences t4-asv-2.qza \
-      --output-dir t4-phylogeny-align-to-tree-mafft-fasttree
-
-# chose a sampling depth of 650. 
-#Obtain core diversity metrics -- are there any other diversity metrics you'd like to add? evenness? chao 1? 
-    
-    #at chosen sampling depth based on the rarefactin info you gathered from above 
-    qiime diversity core-metrics-phylogenetic \
-      --i-phylogeny t4-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
-      --i-table t4-table-2.qza \
-      --p-sampling-depth 650 \
-      --m-metadata-file feb27_meta.tsv \
-      --output-dir t4b-diversity-core-metrics-phylogenetic
-
-#Get alpha diversity visualizations
-    
-    qiime diversity alpha-group-significance \
-      --i-alpha-diversity t4b-diversity-core-metrics-phylogenetic/observed_features_vector.qza \
-      --m-metadata-file feb27_meta.tsv \
-      --o-visualization t4b-alpha-group-sig-obs-feats.qzv
-
-
-#Get ordination plots 
-
-  qiime diversity umap \
-    --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/unweighted_unifrac_distance_matrix.qza \
-    --o-umap t4b-uu-umap.qza
-  
-  qiime diversity umap \
-    --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
-    --o-umap t4b-wu-umap.qza
-
-#Create your expanded metadata (this will be useful for putting your values into the table) 
-
-    qiime metadata tabulate \
-      --m-input-file feb27_meta.tsv t4b-uu-umap.qza t4b-diversity-core-metrics-phylogenetic/faith_pd_vector.qza t4b-diversity-core-metrics-phylogenetic/evenness_vector.qza t4b-diversity-core-metrics-phylogenetic/shannon_vector.qza t4b-diversity-core-metrics-phylogenetic/observed_features_vector.qza \
-      --o-visualization t4b-expanded-metadata-summ.qzv
-
-
-##get chao 1
-qiime diversity alpha \
-      --i-table t4-table-2.qza \
-      --p-metric chao1 \
-      --o-alpha-diversity chao1.qza
-
-## summarize
-qiime metadata tabulate \
-  --m-input-file chao1.qza \
-  --o-visualization chao1.qzv
-
-
-##summarize uu map 
-qiime metadata tabulate \
-  --m-input-file t4b-wu-umap.qza \
-  --o-visualization t4b-wu-umap.qzv
-
-##get beta diversity statistics 
-qiime diversity beta \
-  --i-table t4-table-2.qza \
-  --p-metric braycurtis \
-  --o-distance-matrix braycurtis.qza
-#I cannot summarize this and I'm not sure that I'm going to be able to use it for anything. 
-
-#see if there are beta diversity differences by country 
-qiime diversity beta-group-significance \
-  --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/unweighted_unifrac_distance_matrix.qza \
-  --m-metadata-file feb27_meta.tsv \
-  --m-metadata-column geo_loc_name_country \
-  --o-visualization t4b-diversity-core-metrics-phylogenetic/unweighted-unifrac-donor-significance.qzv
-
-qiime diversity beta-group-significance \
-  --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
-  --m-metadata-file feb27_meta.tsv \
-  --m-metadata-column geo_loc_name_country \
-  --o-visualization t4b-diversity-core-metrics-phylogenetic/weighted-unifrac-donor-significance.qzv
-
-
-qiime diversity beta-group-significance \
-  --i-distance-matrix t4b-diversity-core-metrics-phylogenetic/bray_curtis_distance_matrix.qza \
-  --m-metadata-file feb27_meta.tsv \
-  --m-metadata-column geo_loc_name_country \
-  --o-visualization t4b-diversity-core-metrics-phylogenetic/bray-curtis-country-significance.qzv
 
 
 #alpha group significance 
@@ -468,3 +587,141 @@ qiime diversity alpha-group-significance \
  --i-alpha-diversity chao1.qza \
  --m-metadata-file feb27_meta.tsv \
  --o-visualization t4b-diversity-core-metrics-phylogenetic/chao1-statistics.qzv
+
+qiime taxa collapse \
+  --i-table 5-20s_NI-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-20s_NI-table.qza 
+qiime feature-table summarize \
+      --i-table class-20s_NI-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-20s_NI-table.qzv
+
+qiime taxa collapse \
+  --i-table 5-20s_TC-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-20s_TC-table.qza 
+qiime feature-table summarize \
+      --i-table class-20s_TC-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-20s_TC-table.qzv
+
+qiime taxa collapse \
+  --i-table 5-30s_NI-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-30s_NI-table.qza 
+qiime feature-table summarize \
+      --i-table class-30s_NI-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-30s_NI-table.qzv
+
+qiime taxa collapse \
+  --i-table 5-30s_TC-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-30s_TC-table.qza 
+qiime feature-table summarize \
+      --i-table class-30s_TC-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-30s_TC-table.qzv
+
+qiime taxa collapse \
+  --i-table 5-40s_NI-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-40s_NI-table.qza 
+qiime feature-table summarize \
+      --i-table class-40s_NI-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-40s_NI-table.qzv
+
+qiime taxa collapse \
+  --i-table 5-40s_TC-table.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-40s_TC-table.qza 
+qiime feature-table summarize \
+      --i-table class-40s_TC-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization class-40s_TC-table.qzv
+
+qiime feature-table relative-frequency \
+--i-table class-20s_NI-table.qza \
+--o-relative-frequency-table rel-class-20s_NI-table.qza
+qiime feature-table relative-frequency \
+--i-table class-20s_TC-table.qza \
+--o-relative-frequency-table rel-class-20s_TC-table.qza
+qiime feature-table relative-frequency \
+--i-table class-40s_NI-table.qza \
+--o-relative-frequency-table rel-class-40s_NI-table.qza
+qiime feature-table relative-frequency \
+--i-table class-30s_NI-table.qza \
+--o-relative-frequency-table rel-class-30s_NI-table.qza
+qiime feature-table relative-frequency \
+--i-table class-30s_TC-table.qza \
+--o-relative-frequency-table rel-class-30s_TC-table.qza
+qiime feature-table relative-frequency \
+--i-table class-40s_TC-table.qza \
+--o-relative-frequency-table rel-class-40s_TC-table.qza
+
+
+qiime feature-table summarize \
+      --i-table rel-class-20s_NI-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization rel-class-20s_NI-table.qzv
+qiime feature-table summarize \
+      --i-table rel-class-20s_TC-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization rel-class-20s_TC-table.qzv
+qiime feature-table summarize \
+      --i-table rel-class-40s_NI-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization rel-class-40s_NI-table.qzv
+qiime feature-table summarize \
+      --i-table rel-class-30s_NI-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization rel-class-30s_NI-table.qzv
+qiime feature-table summarize \
+      --i-table rel-class-30s_TC-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization rel-class-30s_TC-table.qzv
+qiime feature-table summarize \
+      --i-table rel-class-40s_TC-table.qza  \
+      --m-sample-metadata-file gaspari-metadata.tsv \
+      --o-visualization rel-class-40s_TC-table.qzv
+
+qiime tools export \
+--input-path rel-class-20s_NI-table.qza \
+--output-path rel-20s_NI-table
+qiime tools export \
+--input-path rel-class-20s_TC-table.qza \
+--output-path rel-20s_TC-table
+qiime tools export \
+--input-path rel-class-40s_NI-table.qza \
+--output-path rel-40s-NI-table
+qiime tools export \
+--input-path rel-class-30s_NI-table.qza \
+--output-path rel-30s-NI-table
+qiime tools export \
+--input-path rel-class-30s_TC-table.qza \
+--output-path rel-30s-TC-table
+qiime tools export \
+--input-path rel-class-40s_TC-table.qza \
+--output-path rel-40s-TC-table
+
+biom convert -i feature-table.biom -o 20s_NI-feature-table.biom.tsv --to-tsv
+-> Left off here: biom convert -i feature-table.biom -o rel-phyla-table.tsv --to-tsv
+biom convert -i feature-table.biom -o rel-phyla-table.tsv --to-tsv
+biom convert -i feature-table.biom -o rel-phyla-table.tsv --to-tsv
+biom convert -i feature-table.biom -o rel-phyla-table.tsv --to-tsv
+biom convert -i feature-table.biom -o rel-phyla-table.tsv --to-tsv
+
+
+qiime taxa collapse \
+  --i-table 5-table-2.qza \
+  --i-taxonomy 5-taxonomy.qza \
+  --p-level 3 \
+  --o-collapsed-table class-table-b.qza 
