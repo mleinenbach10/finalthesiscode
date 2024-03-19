@@ -588,11 +588,12 @@ qiime diversity alpha-group-significance \
  --m-metadata-file feb27_meta.tsv \
  --o-visualization t4b-diversity-core-metrics-phylogenetic/chao1-statistics.qzv
 
+#get lass level taxonomic relative abundance data
 qiime taxa collapse \
   --i-table 5-20s_NI-table.qza \
   --i-taxonomy 5-taxonomy.qza \
   --p-level 3 \
-  --o-collapsed-table class-20s_NI-table.qza 
+  --o-collapsed-table biom-20-noinfection.qza 
 qiime feature-table summarize \
       --i-table class-20s_NI-table.qza  \
       --m-sample-metadata-file gaspari-metadata.tsv \
@@ -666,6 +667,17 @@ qiime feature-table relative-frequency \
 qiime feature-table relative-frequency \
 --i-table class-40s_TC-table.qza \
 --o-relative-frequency-table rel-class-40s_TC-table.qza
+
+#export for statistical analysis
+qiime tools export \
+  --input-path rel-class-20s_NI-table.qza \
+  --output-path exported-class-level-relative-20s-NI
+
+#converting the .biom to .json, as R detests my .biom file.
+biom convert -i feature-table.biom -o feature-table.json --to-json
+biom_file <- read_biom("/Users/meganleinenbach/Documents/Thesis5/exported-class-level-relative-20s-NI/feature-table.json")
+
+
 
 
 qiime feature-table summarize \
