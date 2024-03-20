@@ -474,3 +474,152 @@ grouped_stats <- data %>%
 print(grouped_stats)
 
 # For species level abundance, repeat the above, first exporting a new file from your taxa bar plot view. This file should be filtered down to level 7 (species), rather than level 3. 
+
+#PCA  - In R
+
+####Setup####
+
+#install and load libraries
+install.packages("ggplot2") 
+install.packages("readxl") 
+install.packages("dplyr") 
+library(ggplot2 )
+library(readxl)
+library(dplyr)
+
+#set working directory
+getwd()
+#set working directory as my Thesis5 folder
+getwd() #make sure you are in the right directory
+
+#import the feature table
+feature_table <- read.csv("real-rel-abund-mar20.csv", row.names = 1)
+
+#data pre-processing
+feature_table_numeric <- feature_table %>%
+  select_if(is.numeric) %>%
+  scale()
+
+#checking for empty columns 
+empty_cols <- which(colSums(is.na(feature_table_numeric) | feature_table_numeric == 0) == nrow(feature_table_numeric))
+# Check for any empty rows
+empty_rows <- which(rowSums(is.na(feature_table_numeric) | feature_table_numeric == 0) == ncol(feature_table_numeric))
+
+# Print out empty rows and columns
+cat("Empty columns:", empty_cols, "\n")
+cat("Empty rows:", empty_rows, "\n")
+
+#removing empty columns and rows 
+# Remove empty columns
+if (length(empty_cols) > 0) {
+  feature_table_numeric <- feature_table_numeric[-empty_cols, ]
+}
+
+#running PCA
+
+#got file pca-1.png. There appears to be an outlier that is causing issues, as there isn't even seperating of data by treatment. 
+#the outlier has a PC1 of -15. I am going to remove it. It was sample SRR18210458. 
+
+#saved new pca_meta file as pca_meta_no_458
+
+#got file pca-2.png. There still appears to be no pattern of seperation between the TC and NI groups, so I'm skeptical that this is a good rep of the data. 
+#There is still another outlier with a PC1 of ~ -4. I will remove it as well. That individual is SRR18210465. 
+
+#saved new pca_meta file as pca_meta_no58_no65
+#this generated pca-3.png, which also showed no clustering. by treatment type. 
+
+#I decided to run 1 more PCA by treatment type. This gave me pca-4, and you can kind of see that there's maybe a difference between treatment types, but not super strong. 
+#this is probably in line with the original study's data, which had a difference, but not significant. 
+
+#full code for PCA & outlier re-runs 
+
+####Setup####
+
+#install and load libraries
+install.packages("ggplot2") 
+install.packages("readxl") 
+install.packages("dplyr") 
+library(ggplot2 )
+library(readxl)
+library(dplyr)
+
+#set working directory
+getwd()
+#set working directory as my Thesis5 folder
+getwd() #make sure you are in the right directory
+
+#import the feature table
+feature_table <- read.csv("real-rel-abund-mar20.csv", row.names = 1)
+
+#data pre-processing
+feature_table_numeric <- feature_table %>%
+  select_if(is.numeric) %>%
+  scale()
+
+#checking for empty columns 
+empty_cols <- which(colSums(is.na(feature_table_numeric) | feature_table_numeric == 0) == nrow(feature_table_numeric))
+# Check for any empty rows
+empty_rows <- which(rowSums(is.na(feature_table_numeric) | feature_table_numeric == 0) == ncol(feature_table_numeric))
+
+# Print out empty rows and columns
+cat("Empty columns:", empty_cols, "\n")
+cat("Empty rows:", empty_rows, "\n")
+
+#removing empty columns and rows 
+# Remove empty columns
+if (length(empty_cols) > 0) {
+  feature_table_numeric <- feature_table_numeric[-empty_cols, ]
+}
+
+#running PCA
+pca_real<- prcomp(feature_table_numeric)
+summary(pca_real) 
+write.csv(pca_real, "pca_data.csv")
+
+#combine your metadata in the files themselves (copy over metadata columns from your metadata into an exported PCA data csv)
+
+#Reading Metadata (prep for merging with PCA Data)
+metadata <- read.delim('gaspari-metadata.tsv', sep = '\t', header = TRUE, stringsAsFactors = FALSE)
+pca <- read.delim('pca_scores.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
+
+#read your combined file into a new dataframe
+pca_data <- read.delim('pca_meta.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
+head(pca_data)
+
+#plot it
+library(ggplot2)
+
+ggplot(pca_data, aes(x = PC1, y = PC2, color = X3.way.infection, shape = gynecologic_disord)) +
+  geom_point() +
+  ggtitle("PCA of 3-way infection by Treatment") +
+  theme_minimal() +
+  labs(color = "3-way Infection", shape = "gynecologic_disord")
+
+#removed outlier and re-ran 
+#read your combined file into a new dataframe
+pca_data_no_458 <- read.delim('pca_meta_no_458.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
+head(pca_data_no_458)
+
+ggplot(pca_data_no_458, aes(x = PC1, y = PC2, color = X3.way.infection, shape = gynecologic_disord)) +
+  geom_point() +
+  ggtitle("PCA of 3-way infection by Treatment") +
+  theme_minimal() +
+  labs(color = "3-way Infection", shape = "gynecologic_disord")
+
+#removed second outlier and re-ran
+pca_data_no58_no65 <- read.delim('pca_meta_no58_no65.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
+head(pca_data_no58_no65)
+
+ggplot(pca_data_no58_no65, aes(x = PC1, y = PC2, color = X3.way.infection, shape = gynecologic_disord)) +
+  geom_point() +
+  ggtitle("PCA of 3-way infection by Treatment") +
+  theme_minimal() +
+  labs(color = "3-way Infection", shape = "gynecologic_disord")
+
+#running 1 more PCA by only Treatment Type
+ggplot(pca_data_no58_no65, aes(x = PC1, y = PC2, color = gynecologic_disord)) +
+  geom_point() +
+  ggtitle("PCA of 3-way infection by Treatment") +
+  theme_minimal() +
+  labs(color = "gynecologic_disord")
+
