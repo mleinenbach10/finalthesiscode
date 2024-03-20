@@ -623,3 +623,24 @@ ggplot(pca_data_no58_no65, aes(x = PC1, y = PC2, color = gynecologic_disord)) +
   theme_minimal() +
   labs(color = "gynecologic_disord")
 
+
+#pca-5 running a PCA by two-way
+ggplot(pca_data_no58_no65, aes(x = PC1, y = PC2, color = X2.way.infection)) +
+  geom_point() +
+  ggtitle("PCA of 2-way infection by Treatment") +
+  theme_minimal() +
+  labs(color = "2-way Infection")
+
+#pca-6 running a PCA by two-way age
+ggplot(pca_data_no58_no65, aes(x = PC1, y = PC2, color = X2.way.age)) +
+  geom_point() +
+  ggtitle("PCA of 2-way Age") +
+  theme_minimal() +
+  labs(color = "2-way Age")
+
+#pca-7 running a PCA by three way age
+ggplot(pca_data_no58_no65, aes(x = PC1, y = PC2, color = X3.way.age)) +
+  geom_point() +
+  ggtitle("PCA of 3-way Age") +
+  theme_minimal() +
+  labs(color = "3-way Age")
