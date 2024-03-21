@@ -676,6 +676,24 @@ qiime composition da-barplot \
   --p-significance-threshold 0.1 \
   --o-visualization ancombc-3_way_inf_ten.qzv
 
+
+#ancom
+qiime composition ancombc \
+  --i-table 5-table-2.qza \
+  --m-metadata-file gaspari-metadata-ancom-2.tsv \
+  --p-formula 'age_three' \
+  --o-differentials ancombc-2-age.qza
+
+qiime composition da-barplot \
+  --i-data ancombc-2-age.qza \
+  --p-significance-threshold 0.05 \
+  --o-visualization ancombc-2-age.qzv
+
+qiime composition da-barplot \
+  --i-data ancombc-2-age.qza \
+  --p-significance-threshold 0.1 \
+  --o-visualization ancombc-2-age-ten.qzv
+
 ##The final one got some differential abundance plots. 
 
 
