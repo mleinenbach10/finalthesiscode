@@ -644,3 +644,38 @@ ggplot(pca_data_no58_no65, aes(x = PC1, y = PC2, color = X3.way.age)) +
   ggtitle("PCA of 3-way Age") +
   theme_minimal() +
   labs(color = "3-way Age")
+
+
+#Running ANCOM 
+#test ancom for disease state
+qiime composition ancombc \
+  --i-table 5-table-2.qza \
+  --m-metadata-file gaspari-metadata.tsv \
+  --p-formula 'gynecologic_disord' \
+  --o-differentials ancombc-3wi.qza
+
+qiime composition da-barplot \
+  --i-data ancombc-3wi.qza \
+  --p-significance-threshold 0.05 \
+  --o-visualization ancombc-3wi.qzv
+
+#ancom
+qiime composition ancombc \
+  --i-table 5-table-2.qza \
+  --m-metadata-file gaspari-metadata-ancom-2.tsv \
+  --p-formula 'infection_three' \
+  --o-differentials ancombc-3_way_inf.qza
+
+qiime composition da-barplot \
+  --i-data ancombc-3_way_inf.qza \
+  --p-significance-threshold 0.05 \
+  --o-visualization ancombc-3_way_inf.qzv
+
+qiime composition da-barplot \
+  --i-data ancombc-3_way_inf.qza \
+  --p-significance-threshold 0.1 \
+  --o-visualization ancombc-3_way_inf_ten.qzv
+
+##The final one got some differential abundance plots. 
+
+
