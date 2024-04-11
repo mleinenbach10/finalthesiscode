@@ -697,3 +697,56 @@ qiime composition da-barplot \
 ##The final one got some differential abundance plots. 
 
 
+#April 11
+#adding in the under over 30 data 
+
+#need to updated the gaspari metadata to have an over-under 30 tab 
+#need to merge that metadata with the most filtered table version
+adding the 30 over under data to the feature table: 
+
+#set up feature table
+    qiime feature-table summarize \
+      --i-table 5-table-2.qza \
+      --m-sample-metadata-file updated-gaspari-metadata.tsv \
+      --o-visualization 5-table-2-30.qzv
+
+
+#get core diveresity metrics
+qiime diversity core-metrics-phylogenetic \
+      --i-phylogeny 5-phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
+      --i-table 5-table-2.qza \
+      --p-sampling-depth 25 \
+      --m-metadata-file updated-gaspari-metadata.tsv \
+      --output-dir 5-diversity-core-metrics-phylogenetic-apr11
+
+#Get alpha diversity visualizations
+    
+    qiime diversity alpha-group-significance \
+      --i-alpha-diversity 5-diversity-core-metrics-phylogenetic-apr11/observed_features_vector.qza \
+      --m-metadata-file updated-gaspari-metadata.tsv \
+      --o-visualization 5-alpha-group-sig-obs-feats-apr11.qzv
+
+#get alpha diversity metrics 
+	qiime diversity alpha \
+	      --i-table 5-table-2.qza \
+	      --p-metric chao1 \
+	      --o-alpha-diversity 5-chao1-apr11.qza
+	
+	## Summarizing Chao 1
+	qiime metadata tabulate \
+	  --m-input-file 5-chao1-apr11.qza \
+	  --o-visualization 5-chao1-apr11.qzv
+
+#Obtain Alpha Diversity Significance Metrics 
+	
+	#chao 1 significance
+	qiime diversity alpha-group-significance \
+	 --i-alpha-diversity 5-chao1-ar11.qza \
+	 --m-metadata-file updated-gaspari-metadata.tsv \
+	 --o-visualization chao1-statistics-apr11.qzv
+	
+	#evenness significance
+	qiime diversity alpha-group-significance \
+	 --i-alpha-diversity evenness_vector.qza \
+	 --m-metadata-file updated-gaspari-metadata.tsv \
+	 --o-visualization evenness-statistics-apr11.qzv
